@@ -15,7 +15,6 @@ class CompteController extends Controller
     {
         return CompteResource::collection(Compte::all());
     }
-
     /**
 
     /**

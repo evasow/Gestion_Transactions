@@ -16,7 +16,7 @@ class CompteResource extends JsonResource
     {
         return [
             "solde" => $this->solde,
-            "numéro compte" => $this->numCompte,
+            "numCompte" => $this->numCompte,
             "client" => $this->client,
             "transactions" => $this->transactions,
         ];
