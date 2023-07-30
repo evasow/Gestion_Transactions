@@ -16,6 +16,9 @@ let montant = document.querySelector("#montant");
 let valider = document.querySelector("#valider");
 let success = document.querySelector("#success");
 let myform = document.querySelector("#myform");
+let histTrans = document.querySelector("#histTrans");
+let historique = document.querySelector("#historique");
+let ulhist = document.querySelector(".ulhist");
 // -----------------------Enumeration-----------------------------
 var ColorExp;
 (function (ColorExp) {
@@ -49,19 +52,19 @@ fetchData(url).then(data => {
                     if (numExp.value !== "") {
                         notif("alert-success");
                     }
-                    else if (numExp.value == "") {
-                        notif("alert-danger");
-                    }
                     myform.reset();
                 });
+                historiqueTrans(element.transactions);
             }
         });
+        // ------------Nom destinataires------------
         numDest.addEventListener('input', () => {
             if (+numDest.value == element.client.tel || numDest.value == element.numCompte) {
                 console.log(element.client.prenom + " " + element.client.nom);
                 nomDest.value = element.client.prenom + " " + element.client.nom;
             }
         });
+        // ---historiques transactions--------------------------------
     });
 });
 // function pour color l'expéditeur
@@ -111,4 +114,18 @@ function notif(color) {
         success.classList.add("d-none");
     }, 5000);
 }
-// Valider transaction
+// --historiqueTrans--------
+function historiqueTrans(transactions) {
+    histTrans.addEventListener("click", () => {
+        console.log("success");
+        historique.classList.toggle("d-none");
+        // ulhist.innerHTML='';
+        transactions.forEach((transaction) => {
+            let li = document.createElement("li");
+            li.classList.add("list-group-item");
+            console.log(transaction);
+            li.innerHTML = transaction.typeTrans + " " + transaction.montantTrans + " " + transaction.numDestinataire;
+            ulhist.appendChild(li);
+        });
+    });
+}

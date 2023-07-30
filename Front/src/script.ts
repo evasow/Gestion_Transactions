@@ -16,6 +16,10 @@ let montant=document.querySelector("#montant") as HTMLInputElement
 let valider=document.querySelector("#valider") as HTMLButtonElement
 let success=document.querySelector("#success") as HTMLDivElement
 let myform=document.querySelector("#myform") as HTMLFormElement
+let histTrans=document.querySelector("#histTrans") as HTMLIFrameElement
+let historique=document.querySelector("#historique") as HTMLDivElement
+let ulhist=document.querySelector(".ulhist") as HTMLUListElement
+
 
 // -----------------------Enumeration-----------------------------
 enum ColorExp{
@@ -24,6 +28,16 @@ enum ColorExp{
     "WR" = "green",
 }
 // ---------------------Interface ou Type-------------------------
+
+
+type Transaction={
+    id:number,
+    typeTrans:string,
+    montantTrans:number,
+    client_id:number,
+    compte_id:number,
+    numDestinataire:number,
+}
 interface Compte{
     "solde": number;
     "numCompte": string;
@@ -35,7 +49,7 @@ interface Compte{
         "dateNaiss":string;
         "cni" : number;
     };
-    "transactions" : [];
+    "transactions" :Transaction [];
 }
 
 
@@ -68,13 +82,12 @@ fetchData(url).then(data => {
                         notif("alert-success")
                         
                     }
-                    else if (numExp.value==""){
-                        notif("alert-danger")
-                    }
                     myform.reset();
                 });
+                historiqueTrans(element.transactions);
             } 
         })  
+        // ------------Nom destinataires------------
         numDest.addEventListener('input',()=>{
             if (+numDest.value==element.client.tel || numDest.value==element.numCompte) {
                 console.log(element.client.prenom +" "+ element.client.nom); 
@@ -82,8 +95,11 @@ fetchData(url).then(data => {
                 
             }
         })
+        // ---historiques transactions--------------------------------
+        
     });
   });
+
 
 // function pour color l'expéditeur
 function colorExpediteur(span:HTMLSpanElement, fourn:string) {
@@ -139,4 +155,21 @@ function notif(color:string) {
         success.classList.add("d-none");
     }, 5000);
 }
-// Valider transaction
+// --historiqueTrans--------
+function historiqueTrans(transactions:Transaction[]) {
+    
+    histTrans.addEventListener("click",() => {
+        console.log("success");
+        historique.classList.toggle("d-none");
+
+        // ulhist.innerHTML='';
+        transactions.forEach((transaction:Transaction) => {
+            let li=document.createElement("li");
+            li.classList.add("list-group-item");
+            console.log(transaction);
+            
+            li.innerHTML=transaction.typeTrans+" "+transaction.montantTrans+" "+transaction.numDestinataire;
+            ulhist.appendChild(li);
+        });
+    });
+}
