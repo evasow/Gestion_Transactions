@@ -57,35 +57,32 @@ interface Compte{
     };
     "transactions" :Transaction [];
 }
-
-valider.addEventListener("click",()=>{
-    console.log(document.head.querySelector('[name="csrf-token"]'));
-    const csrfToken = (document.head.querySelector('[name="csrf-token"]')as HTMLMetaElement).content ;
-    const object = {
-        typeTrans: trans.value,
-        montantTrans: montant.value,
-        client_id :nomDest.getAttribute("idClient"),
-        compte_id:nomDest.getAttribute("idCompte"),
-        numDestinataire:numDest.value,
-      };
-      fetch('http://127.0.0.1:8000/api/transaction', {
-        method: 'POST', 
-        body: JSON.stringify(object),
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrfToken 
-          },
-      }).then((res) => {
-        if (res.ok) {
-          console.log("Données insérées avec succès");
-            
-          } else {
-            console.log("Error");
-            
-          }
+function validerTrans() {
+    
+    valider.addEventListener("click",()=>{
+        console.log(trans.value,+montant.value,nomExp.getAttribute("idClient"),nomExp.getAttribute("idCompte"),+numDest.value);
         
-      });
-})
+        const object = {
+            typeTrans: trans.value,
+            montantTrans: +montant.value,
+            client_id :nomExp.getAttribute("idClient"),
+            compte_id:nomExp.getAttribute("idCompte"),
+            numDestinataire:+numDest.value,
+          };
+          fetch('http://127.0.0.1:8000/api/transaction', {
+            method: 'POST', 
+            body: JSON.stringify(object),
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            },
+          }).then((res) => {
+            return res.text();
+          }).then((data) => {
+            console.log(data);        
+        })
+    });
+}
 // ------------------------Expediteurs------------------------
 // Fonction fetch data
 const fetchData = (url: string) => {
@@ -130,7 +127,6 @@ fetchData(url).then(data => {
 //   --------------------evenement expediteur------------------------
     
     numExp.addEventListener('input',(e)=>{
-      console.log(e.target);
       
       let trouveNum= tabNums.some(element=> element==+numExp.value);
       let trouveNumCompte= tabNumComptes.some(element=>element==numExp.value);
@@ -140,12 +136,12 @@ fetchData(url).then(data => {
         if (compte) {
             nomExp.value= compte.client.prenom +" "+ compte.client.nom;
             nomExp.setAttribute("idClient", compte.client.id.toString())
-            nomExp.setAttribute("idCompte", compte.client.id.toString())
-            console.log(nomExp);
+            nomExp.setAttribute("idCompte", compte.id.toString())
             
             let fourn:string= compte.numCompte.split("_")["0"];
             colorExpediteur(colorExp, fourn);
             historiqueTrans(compte.transactions);
+            validerTrans(); 
         }
       }
       else if(!trouveNum ||!trouveNumCompte){
