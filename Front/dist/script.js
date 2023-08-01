@@ -13,6 +13,11 @@ let colorExp = document.querySelector('.colorExp');
 let fourn = document.querySelector("#fourn");
 let trans = document.querySelector("#trans");
 let montant = document.querySelector("#montant");
+let montantEnv = document.querySelector("#montantEnv");
+let soldeError = document.querySelector('#soldeError');
+let solde = document.querySelector("#solde");
+let divmtnEnv = document.querySelector("#divmtnEnv");
+let frais = document.querySelector("#frais");
 let valider = document.querySelector("#valider");
 let success = document.querySelector("#success");
 let myform = document.querySelector("#myform");
@@ -146,16 +151,25 @@ Transactions.forEach(transaction => {
 //------------------ Vérifier le montant saisie pour la transaction
 montant.addEventListener("input", () => {
     verifieMontant(montant, 500);
+    montantEnv.value = (+montant.value - (+montant.value * 5 / 100)).toString();
+    if (verifieMontant(montant, 500)) {
+        soldeError.classList.remove("d-none");
+    }
+    else {
+        soldeError.classList.add("d-none");
+    }
 });
 //----------------- Fonction pour controler le montant saisie
 function verifieMontant(input, montant, solde = 1000000) {
     if (+input.value < montant || +input.value > solde) {
         input.style.color = "red";
         valider.setAttribute("disabled", "disabled");
+        return true;
     }
     else {
         input.style.color = "green";
         valider.removeAttribute("disabled");
+        return false;
     }
 }
 // ---------------------Notification transaction --------------------
@@ -188,5 +202,11 @@ trans.addEventListener('change', () => {
     }
     else {
         destinataire.classList.remove('d-none');
+    }
+    if (trans.value == "transfert") {
+        divmtnEnv.classList.remove('d-none');
+    }
+    else {
+        divmtnEnv.classList.add('d-none');
     }
 });

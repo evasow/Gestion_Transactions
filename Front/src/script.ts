@@ -14,6 +14,11 @@ let colorExp=document.querySelector('.colorExp') as HTMLSpanElement
 let fourn=document.querySelector("#fourn") as HTMLSelectElement
 let trans=document.querySelector("#trans") as HTMLSelectElement
 let montant=document.querySelector("#montant") as HTMLInputElement
+let montantEnv=document.querySelector("#montantEnv") as HTMLInputElement
+let soldeError=document.querySelector('#soldeError') as HTMLDivElement
+let solde=document.querySelector("#solde") as HTMLSpanElement
+let divmtnEnv=document.querySelector("#divmtnEnv") as HTMLDivElement
+let frais=document.querySelector("#frais") as HTMLDivElement
 let valider=document.querySelector("#valider") as HTMLButtonElement
 let success=document.querySelector("#success") as HTMLDivElement
 let myform=document.querySelector("#myform") as HTMLFormElement
@@ -187,6 +192,14 @@ Transactions.forEach(transaction => {
 montant.addEventListener("input",()=>{
     
     verifieMontant(montant, 500)
+    montantEnv.value=(+montant.value-(+montant.value*5/100)).toString()
+
+    if (verifieMontant(montant, 500)) {
+        soldeError.classList.remove("d-none");
+    }
+    else{
+        soldeError.classList.add("d-none");
+    }
   
 })
 
@@ -195,10 +208,12 @@ function verifieMontant(input:HTMLInputElement,montant:number, solde:number=1000
     if (+input.value<montant || +input.value>solde) {
         input.style.color="red"
         valider.setAttribute("disabled", "disabled")
+        return true;
     }
     else{
         input.style.color="green"
         valider.removeAttribute("disabled")
+        return false;
     }
 }
 // ---------------------Notification transaction --------------------
@@ -236,6 +251,12 @@ trans.addEventListener('change',()=>{
         destinataire.classList.add('d-none');
     }else{
         destinataire.classList.remove('d-none');
-    }   
+    } 
+    if (trans.value=="transfert") {
+        divmtnEnv.classList.remove('d-none');
+    } 
+    else{
+        divmtnEnv.classList.add('d-none');
+    }  
 })
 
