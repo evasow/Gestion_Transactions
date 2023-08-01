@@ -33,6 +33,9 @@
                     <div class="col-md-4">
                         <label for="nomExp" class="form-label" >Nom Complet</label>
                         <input type="texte" class="form-control" id="nomExp" disabled>
+                        <input type="number" class="d-none" id="client">
+                        <input type="number" class="d-none" id="compte">
+
                     </div>
                     <!-- <div class="h5 border mb-3 p-3 "> -->
                       <i class="fa-solid fa-circle-info" style="cursor: pointer;" id="histTrans"></i>
@@ -71,7 +74,7 @@
                     <span class="badge bg-info"><h6>Destinataire</h6></span>
                     <hr>
                 </div>
-                <div class="d-flex  justify-content-end w-75">
+                <div class="d-flex  justify-content-end w-75" id="destinataire">
                     <div class="col-md-4">
                         <label for="numDest" class="form-label">Numero de compte / Tel</label>
                         <input type="texte" class="form-control" id="numDest">
