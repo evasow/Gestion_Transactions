@@ -1,5 +1,4 @@
 "use strict";
-// console.log("Starting");
 // ------------------Constantes--------------------------------
 const url = 'http://127.0.0.1:8000/api/compte';
 const Fournisseurs = ["Orange Money", "Wave", "Wari"];
@@ -15,7 +14,7 @@ let trans = document.querySelector("#trans");
 let montant = document.querySelector("#montant");
 let montantEnv = document.querySelector("#montantEnv");
 let soldeError = document.querySelector('#soldeError');
-let solde = document.querySelector("#solde");
+let sold = document.querySelector("#solde");
 let divmtnEnv = document.querySelector("#divmtnEnv");
 let frais = document.querySelector("#frais");
 let valider = document.querySelector("#valider");
@@ -25,6 +24,11 @@ let histTrans = document.querySelector("#histTrans");
 let historique = document.querySelector("#historique");
 let ulhist = document.querySelector(".ulhist");
 let destinataire = document.querySelector("#destinataire");
+let notification = document.querySelector("#notif");
+let code = document.querySelector("#code");
+let withCode = document.querySelector("#withCode");
+let mtnFrais = document.querySelector("#mtnFrais");
+let invalideFourn = document.querySelector("#invalideFourn");
 // form Data------------------------
 let client = document.querySelector("#client");
 let compt = document.querySelector("#compte");
@@ -34,8 +38,23 @@ var ColorExp;
     ColorExp["OM"] = "orange";
     ColorExp["WV"] = "#00bfff";
     ColorExp["WR"] = "green";
+    ColorExp["CB"] = "yellow";
     ColorExp["NEUTRE"] = "grey";
 })(ColorExp || (ColorExp = {}));
+var Frais;
+(function (Frais) {
+    Frais["OM_WV"] = "1%";
+    Frais["WR"] = "2%";
+    Frais["CB"] = "5%";
+})(Frais || (Frais = {}));
+var Fournisseur;
+(function (Fournisseur) {
+    Fournisseur["OM"] = "Orange Money";
+    Fournisseur["WV"] = "Wave";
+    Fournisseur["WR"] = "Wari";
+    Fournisseur["CB"] = "Compte Bancaire";
+})(Fournisseur || (Fournisseur = {}));
+// ------fonction faire une transaction -----------------------
 function validerTrans() {
     valider.addEventListener("click", () => {
         console.log(trans.value, +montant.value, nomExp.getAttribute("idClient"), nomExp.getAttribute("idCompte"), +numDest.value);
@@ -44,7 +63,7 @@ function validerTrans() {
             montantTrans: +montant.value,
             client_id: nomExp.getAttribute("idClient"),
             compte_id: nomExp.getAttribute("idCompte"),
-            numDestinataire: +numDest.value,
+            numDestinataire: numDest.value,
         };
         fetch('http://127.0.0.1:8000/api/transaction', {
             method: 'POST',
@@ -110,6 +129,7 @@ fetchData(url).then(data => {
                 let fourn = compte.numCompte.split("_")["0"];
                 colorExpediteur(colorExp, fourn);
                 historiqueTrans(compte.transactions);
+                MontantValide(compte.solde);
                 validerTrans();
             }
         }
@@ -149,16 +169,19 @@ Transactions.forEach(transaction => {
     trans.appendChild(option);
 });
 //------------------ Vérifier le montant saisie pour la transaction
-montant.addEventListener("input", () => {
-    verifieMontant(montant, 500);
-    montantEnv.value = (+montant.value - (+montant.value * 5 / 100)).toString();
-    if (verifieMontant(montant, 500)) {
-        soldeError.classList.remove("d-none");
-    }
-    else {
-        soldeError.classList.add("d-none");
-    }
-});
+function MontantValide(solde) {
+    montant.addEventListener("input", () => {
+        verifieMontant(montant, 500, solde);
+        montantEnv.value = (+montant.value - (+montant.value * 5 / 100)).toString();
+        if (verifieMontant(montant, 500, solde)) {
+            soldeError.classList.remove("d-none");
+            sold.innerHTML = `<b>solde : ${solde.toString()}</b>`;
+        }
+        else {
+            soldeError.classList.add("d-none");
+        }
+    });
+}
 //----------------- Fonction pour controler le montant saisie
 function verifieMontant(input, montant, solde = 1000000) {
     if (+input.value < montant || +input.value > solde) {
@@ -185,14 +208,18 @@ function historiqueTrans(transactions) {
     histTrans.addEventListener("click", () => {
         console.log(historique);
         historique.classList.toggle("d-none");
-        // ulhist.innerHTML='';
-        // transactions.forEach((transaction:Transaction) => {
-        //     let li=document.createElement("li");
-        //     li.classList.add("list-group-item");
-        //     console.log(transaction);
-        //     li.innerHTML=transaction.typeTrans+" "+transaction.montantTrans+" "+transaction.numDestinataire;
-        //     ulhist.appendChild(li);
-        // });
+        ulhist.innerHTML = '';
+        transactions.forEach((transaction) => {
+            let li = document.createElement("li");
+            li.classList.add("list-group-item");
+            console.log(transaction);
+            // li.innerHTML=transaction.typeTrans+" "+transaction.montantTrans+" "+transaction.numDestinataire;
+            const date = new Date(transaction.created_at);
+            li.innerHTML = `<h6 class="text-info"><b>${transaction.typeTrans}</b></h6>
+            <span>${date.toLocaleDateString()}</span>
+            <div class="d-flex justify-content-end"><h6 class="text-info">${transaction.montantTrans}</h6></div>`;
+            ulhist.appendChild(li);
+        });
     });
 }
 // --------------retait / destinataire none--------------------------------
@@ -205,8 +232,33 @@ trans.addEventListener('change', () => {
     }
     if (trans.value == "transfert") {
         divmtnEnv.classList.remove('d-none');
+        if (fourn.value == "Orange Money" || fourn.value == "Wave") {
+            code.classList.remove('d-none');
+            mtnFrais.innerHTML = Frais.OM_WV;
+            frais.classList.remove('d-none');
+        }
+        else if (fourn.value == "Wari") {
+            mtnFrais.innerHTML = Frais.WR;
+            frais.classList.remove('d-none');
+        }
     }
     else {
         divmtnEnv.classList.add('d-none');
+    }
+});
+fourn.addEventListener("change", () => {
+    console.log(numExp.value.split("_")[0]);
+    // type Fournis = keyof typeof Fournisseur;
+    // let four:Fournis=numExp.value.split("_")[0]
+    // if (Fournisseur.four) {
+    // }
+    if (trans.value == "transfert") {
+        if (fourn.value == "Orange Money" || fourn.value == "Wave") {
+            mtnFrais.innerHTML = Frais.OM_WV;
+        }
+        else {
+            mtnFrais.innerHTML = Frais.WR;
+            code.classList.add('d-none');
+        }
     }
 });

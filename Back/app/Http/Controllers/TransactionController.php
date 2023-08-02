@@ -31,12 +31,19 @@ class TransactionController extends Controller
      */
     public function storeTrans(Request $request)
     {
+        $request->validate([
+            "typeTrans"=>"required",
+            "montantTrans"=>"required|unsigned|float|min:500|max:1000000",
+            "client_id"=>"required",
+            "compte_id"=>"required",
+            "numDestinataire"=>"string",
+        ]);
         Transaction::firstOrCreate([
             "typeTrans"=>$request->typeTrans,
             "montantTrans"=>$request->montantTrans,
             "client_id"=>$request->client_id,
             "compte_id"=>$request->compte_id,
-            "numDestinataire"=>$request->numDestinataire
+            "numDestinataire"=>$request->numDestinataire,
         ]);
         $compte=  Compte::where("id",$request->compte_id)->first();
         if ($request->typeTrans=="depot") {
@@ -50,33 +57,13 @@ class TransactionController extends Controller
         else {
             $fourn= explode("_",$compte->numCompte)[0];
     
-            if ($fourn=="WV"){
-                $this->transfert($request->transfert_type, $request->numDestinataire, "WV",$request->montantTrans);
-                // if($request->transfert_type==0){
-                //    $destId=Client::where("tel",$request->numDestinataire)->pluck("id");
-                //    $destCompte=Compte::where("client_id",$destId[0])->first();
-
-                //    if (explode("_",$destCompte->numCompte)[0]=="WV") {
-                //     $solde=$destCompte->solde;
-                //     $mtntTrans=$request->montantTrans;
-                //     $destCompte->update(['solde'=>$solde+($mtntTrans-$mtntTrans*(1/100))]);
-                //      return "$request->typeTrans  effectué avec succés !";
-                //    }
-                //    else{
-                //         return "vous ne pouvez pas pas transféré vers ce compte";
-                //    }
-                // }
-                // else{
-                //     $faker = Faker::create();
-                //     $code = $faker->numerify('#######################');
-                //     return $code;
-                // }
-            }
+            return $this->transfert($request->transfert_type, $request->numDestinataire, $fourn,$request->montantTrans);
+               
         }
     }
     public function transfert($transfertType, $destinataire, $fourn,$montant)
     {
-        return "service";
+        
         if($transfertType==0){
             $destId=Client::where("tel",$destinataire)->pluck("id");
             $destCompte=Compte::where("client_id",$destId[0])->first();
@@ -93,8 +80,7 @@ class TransactionController extends Controller
          }
          else{
              $faker = Faker::create();
-             $code = $faker->numerify('#######################');
-             return $code;
+             return $faker->numerify('#######################');
          }
     }
     /**

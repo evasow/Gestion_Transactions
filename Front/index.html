@@ -12,7 +12,7 @@
     <div class="container">
         <div class="alert alert-dismissible alert-success alert-success d-none" id="success">
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            <strong>Réussi!</strong> Transaction Fait <a href="#" class="alert-link">Avec Succes</a>.
+            <span id="notif"><strong>Réussi!</strong></span>
           </div>
         <h1 class="rounded border border-dark p-2 m-2 text-center text-black table-info bg-info">Breukh-Transactions</h1>
         <div class="border mb-3 p-3 d-flex">
@@ -59,8 +59,15 @@
                       <select name="" id="trans" class="form-select"> 
                         <option value="">selectionner</option>
                       </select>
+                      <div id="code" class="d-none">
+                        <label for="withCode">Avec code</label>
+                        <input class="form-check-input me-1" type="checkbox" value="" aria-label="..." id="withCode">
+                      </div>
 
                     </div>
+                  </div>
+                  <div class="d-flex justify-content-center text-danger d-none" id="invalideFourn">
+                    Fournisseur invalide !
                   </div>
                   <div class="d-flex justify-content-end">
 
@@ -70,17 +77,17 @@
                       </div>
                     </div>
                     <div class="d-flex justify-content-center text-danger d-none" id="soldeError">
-                      Montant incorecte votre solde est : <span id="solde"> 10000</span>
+                      <span>Montant incorect !  <span id="solde" class="text-success"></span></span>
                     </div>
                     <div class="d-flex justify-content-end">
 
                     <div class="col-8 d-none" id="divmtnEnv">
                       <label for="montantEnv" class="form-label">Montant envoyé</label>
-                      <input type="number" class="form-control" id="montantEnv" placeholder="" disabled>
+                      <input type="number" class="form-control border-top-0 border-left-0 border-right-0"id="montantEnv" placeholder="" disabled>
                     </div>
                   </div>
-                  <div class="d-flex justify-content-center text-info d-none" id="frais">
-                    Les frais sont de 5%
+                  <div class="d-flex justify-content-center text-info mt-4 d-none" id="frais">
+                   <h5><b>Les frais sont de <span id="mtnFrais"></span></b></h5> 
                   </div>
                     
                 </div>
@@ -102,11 +109,13 @@
                     <button type="button" class="btn btn-primary" id="valider">Valider</button>
                   </div>
               </form>
-              <div class="card mb-3 w-50 d-none" id="historique">
-                <ul class="list-group list-group-flush ulhist">
-                  <!-- <li class="list-group-item">Cras justo odio</li>
-                  <li class="list-group-item">Dapibus ac facilisis in</li>
-                  <li class="list-group-item">Vestibulum at eros</li> -->
+              <div class="card mb-3 w-50 d-none " id="historique">
+                <ul class="list-group list-group-flush ulhist scrollable">
+                   <li class="list-group-item">
+                    <h6>Depot</h6>
+                    <span>date</span>
+                    <div class="d-flex justify-content-end"><h6>montant</h6></div>
+                   </li>
                 </ul>
                 <div class="card-footer text-muted">
                   2 days ago

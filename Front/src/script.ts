@@ -1,4 +1,3 @@
-// console.log("Starting");
 
 // ------------------Constantes--------------------------------
 const url = 'http://127.0.0.1:8000/api/compte';
@@ -16,7 +15,7 @@ let trans=document.querySelector("#trans") as HTMLSelectElement
 let montant=document.querySelector("#montant") as HTMLInputElement
 let montantEnv=document.querySelector("#montantEnv") as HTMLInputElement
 let soldeError=document.querySelector('#soldeError') as HTMLDivElement
-let solde=document.querySelector("#solde") as HTMLSpanElement
+let sold=document.querySelector("#solde") as HTMLSpanElement
 let divmtnEnv=document.querySelector("#divmtnEnv") as HTMLDivElement
 let frais=document.querySelector("#frais") as HTMLDivElement
 let valider=document.querySelector("#valider") as HTMLButtonElement
@@ -26,6 +25,12 @@ let histTrans=document.querySelector("#histTrans") as HTMLIFrameElement
 let historique=document.querySelector("#historique") as HTMLDivElement
 let ulhist=document.querySelector(".ulhist") as HTMLUListElement
 let destinataire=document.querySelector("#destinataire") as HTMLDivElement
+let notification=document.querySelector("#notif") as HTMLSpanElement
+let code=document.querySelector("#code") as HTMLDivElement
+let withCode=document.querySelector("#withCode") as HTMLInputElement
+let mtnFrais=document.querySelector("#mtnFrais") as HTMLSpanElement
+let invalideFourn=document.querySelector("#invalideFourn") as HTMLDivElement
+
 // form Data------------------------
 let client=document.querySelector("#client") as HTMLInputElement
 let compt=document.querySelector("#compte") as HTMLInputElement
@@ -35,7 +40,19 @@ enum ColorExp{
     "OM" = "orange",
     "WV" = "#00bfff",
     "WR" = "green",
+    "CB" = "yellow",
     "NEUTRE" = "grey",
+}
+enum Frais{
+    OM_WV = "1%",
+    WR = "2%",
+    CB = "5%",
+}
+enum Fournisseur{
+    OM = "Orange Money",
+    WV = "Wave",
+    WR = "Wari",
+    CB = "Compte Bancaire",
 }
 // ---------------------Interface ou Type-------------------------
 
@@ -47,6 +64,8 @@ type Transaction={
     client_id:number,
     compte_id:number,
     numDestinataire:number,
+    created_at:Date
+
 }
 interface Compte{
     "id":number;
@@ -62,6 +81,7 @@ interface Compte{
     };
     "transactions" :Transaction [];
 }
+// ------fonction faire une transaction -----------------------
 function validerTrans() {
     
     valider.addEventListener("click",()=>{
@@ -72,19 +92,19 @@ function validerTrans() {
             montantTrans: +montant.value,
             client_id :nomExp.getAttribute("idClient"),
             compte_id:nomExp.getAttribute("idCompte"),
-            numDestinataire:+numDest.value,
-          };
-          fetch('http://127.0.0.1:8000/api/transaction', {
-            method: 'POST', 
-            body: JSON.stringify(object),
-            headers: {
-                'Content-Type': 'application/json',
-                'accept': 'application/json'
-            },
-          }).then((res) => {
-            return res.text();
-          }).then((data) => {
-            console.log(data);        
+            numDestinataire:numDest.value,
+        };
+        fetch('http://127.0.0.1:8000/api/transaction', {
+        method: 'POST', 
+        body: JSON.stringify(object),
+        headers: {
+            'Content-Type': 'application/json',
+            'accept': 'application/json'
+        },
+        }).then((res) => {
+         return res.text()
+        }).then((data) => {
+             console.log(data);        
         })
     });
 }
@@ -146,6 +166,7 @@ fetchData(url).then(data => {
             let fourn:string= compte.numCompte.split("_")["0"];
             colorExpediteur(colorExp, fourn);
             historiqueTrans(compte.transactions);
+            MontantValide(compte.solde)
             validerTrans(); 
         }
       }
@@ -189,19 +210,23 @@ Transactions.forEach(transaction => {
 
 });
 //------------------ Vérifier le montant saisie pour la transaction
-montant.addEventListener("input",()=>{
+function MontantValide(solde:number) {
     
-    verifieMontant(montant, 500)
-    montantEnv.value=(+montant.value-(+montant.value*5/100)).toString()
-
-    if (verifieMontant(montant, 500)) {
-        soldeError.classList.remove("d-none");
-    }
-    else{
-        soldeError.classList.add("d-none");
-    }
-  
-})
+    montant.addEventListener("input",()=>{
+        
+        verifieMontant(montant, 500,solde)
+        montantEnv.value=(+montant.value-(+montant.value*5/100)).toString()
+    
+        if (verifieMontant(montant, 500,solde)) {
+            soldeError.classList.remove("d-none");
+            sold.innerHTML=`<b>solde : ${solde.toString()}</b>`;
+        }
+        else{
+            soldeError.classList.add("d-none");
+        }
+      
+    })
+}
 
 //----------------- Fonction pour controler le montant saisie
 function verifieMontant(input:HTMLInputElement,montant:number, solde:number=1000000) {
@@ -232,15 +257,19 @@ function historiqueTrans(transactions:Transaction[]) {
     
         historique.classList.toggle("d-none");   
 
-        // ulhist.innerHTML='';
-        // transactions.forEach((transaction:Transaction) => {
-        //     let li=document.createElement("li");
-        //     li.classList.add("list-group-item");
-        //     console.log(transaction);
+        ulhist.innerHTML='';
+        transactions.forEach((transaction:Transaction) => {
+            let li=document.createElement("li");
+            li.classList.add("list-group-item");
+            console.log(transaction);
             
-        //     li.innerHTML=transaction.typeTrans+" "+transaction.montantTrans+" "+transaction.numDestinataire;
-        //     ulhist.appendChild(li);
-        // });
+            // li.innerHTML=transaction.typeTrans+" "+transaction.montantTrans+" "+transaction.numDestinataire;
+            const date = new Date(transaction.created_at);
+            li.innerHTML=`<h6 class="text-info"><b>${transaction.typeTrans}</b></h6>
+            <span>${date.toLocaleDateString()}</span>
+            <div class="d-flex justify-content-end"><h6 class="text-info">${transaction.montantTrans}</h6></div>`
+            ulhist.appendChild(li);
+        });
         
     });
 }
@@ -254,9 +283,38 @@ trans.addEventListener('change',()=>{
     } 
     if (trans.value=="transfert") {
         divmtnEnv.classList.remove('d-none');
+        if (fourn.value=="Orange Money" || fourn.value=="Wave") {
+            code.classList.remove('d-none');
+            mtnFrais.innerHTML=Frais.OM_WV
+            frais.classList.remove('d-none');
+        }
+        else if (fourn.value=="Wari") {
+            mtnFrais.innerHTML=Frais.WR
+            frais.classList.remove('d-none');
+        }
     } 
     else{
         divmtnEnv.classList.add('d-none');
     }  
 })
+
+fourn.addEventListener("change",()=>{
+    console.log(numExp.value.split("_")[0]);
+    // type Fournis = keyof typeof Fournisseur;
+    // let four:Fournis=numExp.value.split("_")[0]
+    // if (Fournisseur.four) {
+        
+    // }
+        
+    if (trans.value=="transfert") {
+        if (fourn.value=="Orange Money" || fourn.value=="Wave") {
+            mtnFrais.innerHTML=Frais.OM_WV
+        }
+        else{
+            mtnFrais.innerHTML=Frais.WR
+            code.classList.add('d-none');
+        }  
+    }
+   
+});
 
