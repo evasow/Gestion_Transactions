@@ -63,7 +63,10 @@ function validerTrans() {
             montantTrans: +montant.value,
             client_id: nomExp.getAttribute("idClient"),
             compte_id: nomExp.getAttribute("idCompte"),
-            numDestinataire: numDest.value,
+            client_dest_id: nomDest.getAttribute("destId"),
+            transfert_type: withCode.value,
+            fournisseur: fourn.value,
+            type_cb_trans: 0
         };
         fetch('http://127.0.0.1:8000/api/transaction', {
             method: 'POST',
@@ -77,6 +80,7 @@ function validerTrans() {
         }).then((data) => {
             console.log(data);
         });
+        myform.reset();
     });
 }
 // ------------------------Expediteurs------------------------
@@ -95,23 +99,12 @@ fetchData(url).then(data => {
     donnees.forEach((element) => {
         tabNums.push(element.client.tel);
         tabNumComptes.push(element.numCompte);
-        numExp.addEventListener('input', () => {
-            //     montant.addEventListener("input",()=>{
-            //         verifieMontant(montant, 500, +element.solde)
-            //     }); 
-            //     valider.addEventListener("click",()=>{
-            //         if (numExp.value!=="") {
-            //             notif("alert-success")
-            //         }
-            //         myform.reset();
-            //     });
-            //     historiqueTrans(element.transactions);
-        });
         // ------------Nom destinataires------------
         numDest.addEventListener('input', () => {
             if (+numDest.value == element.client.tel || numDest.value == element.numCompte) {
                 console.log(element.client.prenom + " " + element.client.nom);
                 nomDest.value = element.client.prenom + " " + element.client.nom;
+                nomDest.setAttribute("destId", element.client.id.toString());
             }
         });
         // ---------historiques transactions--------
@@ -168,11 +161,20 @@ Transactions.forEach(transaction => {
     option.innerHTML = transaction;
     trans.appendChild(option);
 });
+// ----verifier frais operateur--------
+function fraisOperateur() {
+    if (fourn.value === "Orange Money" || fourn.value === "Wave") {
+        montantEnv.value = Math.round(+montant.value - (+montant.value * 0.01)).toString();
+    }
+    else {
+        montantEnv.value = (+montant.value - (+montant.value * 0.05)).toString();
+    }
+}
 //------------------ Vérifier le montant saisie pour la transaction
 function MontantValide(solde) {
     montant.addEventListener("input", () => {
         verifieMontant(montant, 500, solde);
-        montantEnv.value = (+montant.value - (+montant.value * 5 / 100)).toString();
+        fraisOperateur();
         if (verifieMontant(montant, 500, solde)) {
             soldeError.classList.remove("d-none");
             sold.innerHTML = `<b>solde : ${solde.toString()}</b>`;
@@ -215,11 +217,30 @@ function historiqueTrans(transactions) {
             console.log(transaction);
             // li.innerHTML=transaction.typeTrans+" "+transaction.montantTrans+" "+transaction.numDestinataire;
             const date = new Date(transaction.created_at);
-            li.innerHTML = `<h6 class="text-info"><b>${transaction.typeTrans}</b></h6>
+            if (transaction.typeTrans == "transfert") {
+            }
+            li.innerHTML = `<div class="d-flex justify-content-around>
+            <div><h6 class="text-info"><b>${transaction.typeTrans}</b></h6></div>
+            <div>${transaction.client_dest.prenom + " " + transaction.client_dest.nom} </div>
+            </div>
+            
             <span>${date.toLocaleDateString()}</span>
             <div class="d-flex justify-content-end"><h6 class="text-info">${transaction.montantTrans}</h6></div>`;
             ulhist.appendChild(li);
         });
+    });
+}
+// -----function transaction avec ou sas code -----
+function transCode() {
+    withCode.addEventListener("change", () => {
+        if (withCode.checked) {
+            withCode.value = "1";
+            console.log(withCode.value);
+        }
+        else {
+            withCode.value = "0";
+            console.log(withCode.value);
+        }
     });
 }
 // --------------retait / destinataire none--------------------------------
@@ -234,6 +255,7 @@ trans.addEventListener('change', () => {
         divmtnEnv.classList.remove('d-none');
         if (fourn.value == "Orange Money" || fourn.value == "Wave") {
             code.classList.remove('d-none');
+            transCode();
             mtnFrais.innerHTML = Frais.OM_WV;
             frais.classList.remove('d-none');
         }
@@ -248,10 +270,7 @@ trans.addEventListener('change', () => {
 });
 fourn.addEventListener("change", () => {
     console.log(numExp.value.split("_")[0]);
-    // type Fournis = keyof typeof Fournisseur;
-    // let four:Fournis=numExp.value.split("_")[0]
-    // if (Fournisseur.four) {
-    // }
+    fraisOperateur();
     if (trans.value == "transfert") {
         if (fourn.value == "Orange Money" || fourn.value == "Wave") {
             mtnFrais.innerHTML = Frais.OM_WV;

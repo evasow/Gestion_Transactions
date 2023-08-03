@@ -16,4 +16,9 @@ class Transaction extends Model
         'password',
         'remember_token',
     ];
+
+    public function client_dest()
+    {
+        return $this->belongsTo(Client::class);
+    }
 }

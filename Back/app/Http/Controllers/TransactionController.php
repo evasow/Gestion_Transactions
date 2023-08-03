@@ -31,9 +31,14 @@ class TransactionController extends Controller
      */
     public function storeTrans(Request $request)
     {
-        $request->validate([
+        $minAmount = 500;
+
+        if($request->fournisseur == 'Orange Money' || $request->fournisseur == 'Wave') {
+            $minAmount = 500;
+        }
+        $validate=$request->validate([
             "typeTrans"=>"required",
-            "montantTrans"=>"required|unsigned|float|min:500|max:1000000",
+            "montantTrans"=>"required|numeric|min:$minAmount",
             "client_id"=>"required",
             "compte_id"=>"required",
             "numDestinataire"=>"string",
@@ -43,7 +48,11 @@ class TransactionController extends Controller
             "montantTrans"=>$request->montantTrans,
             "client_id"=>$request->client_id,
             "compte_id"=>$request->compte_id,
-            "numDestinataire"=>$request->numDestinataire,
+            "transfert_type"=>$request->transfert_type,
+            "fournisseur"=>$request->fournisseur,
+            "type_cb_trans"=>$request->type_cb_trans,
+            "client_dest_id"=>$request->client_dest_id,
+
         ]);
         $compte=  Compte::where("id",$request->compte_id)->first();
         if ($request->typeTrans=="depot") {
@@ -57,25 +66,29 @@ class TransactionController extends Controller
         else {
             $fourn= explode("_",$compte->numCompte)[0];
     
-            return $this->transfert($request->transfert_type, $request->numDestinataire, $fourn,$request->montantTrans);
+            return $this->transfert(
+                $request->transfert_type, $request->client_dest_id, $fourn,$request->montantTrans,$compte);
                
         }
     }
-    public function transfert($transfertType, $destinataire, $fourn,$montant)
+    public function transfert($transfertType, $destinataireId, $fourn,$montant,$expCompte)
     {
         
         if($transfertType==0){
-            $destId=Client::where("tel",$destinataire)->pluck("id");
+            $destId=Client::where("id",$destinataireId)->pluck("id");
             $destCompte=Compte::where("client_id",$destId[0])->first();
 
             if (explode("_",$destCompte->numCompte)[0]==$fourn) {
-             $solde=$destCompte->solde;
+             $soldeDest=$destCompte->solde;
+             $soldeExp=$expCompte->solde;
              $mtntTrans=$montant;
-             $destCompte->update(['solde'=>$solde+($mtntTrans-$mtntTrans*(1/100))]);
-              return "transfert effectué avec succés !";
+             $destCompte->update(['solde'=>$soldeDest+($mtntTrans-$mtntTrans*(1/100))]);
+             $expCompte->update(['solde'=>$soldeExp-($mtntTrans-$mtntTrans*(1/100))]);
+                // return $expCompte;
+                return "transfert effectué avec succés !";
             }
             else{
-                 return "vous ne pouvez pas pas transféré vers ce compte";
+                return "vous ne pouvez pas pas transféré vers ce compte";
             }
          }
          else{
