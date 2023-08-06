@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
             $table->string('nom');
             $table->string('prenom');
-            $table->integer('tel');
-            $table->date('dateNaiss');
-            $table->integer('cni');
+            $table->string('tel');
+            $table->date('dateNaiss')->nullable();
+            $table->integer('cni')->nullable();
             $table->timestamps();
         });
     }

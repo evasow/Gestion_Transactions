@@ -25,12 +25,17 @@ class TransactionController extends Controller
     {
         //
     }
-
     /**
      * Store a newly created resource in storage.
      */
     public function storeTrans(Request $request)
     {
+
+        if ($this->compteFermeOuBloque($request->compte_id,"etat")) {
+            return response()->json([
+                "message" => "Compte fermé ! Impossible de faire des opérations avec ce compte"
+            ]);
+        }
         $minAmount = 500;
 
         if($request->fournisseur == 'Orange Money' || $request->fournisseur == 'Wave') {
@@ -57,13 +62,27 @@ class TransactionController extends Controller
         $compte=  Compte::where("id",$request->compte_id)->first();
         if ($request->typeTrans=="depot") {
           $compte->update(['solde'=>$request->montantTrans+$compte->solde]);
-          return "$request->typeTrans  effectué avec succés !";
+          return response()->json([
+            "message"=> "$request->typeTrans  effectué avec succés !",
+          ]);
         }
         elseif($request->typeTrans=="retrait"){
+            if ($this->compteFermeOuBloque($request->compte_id,"blocage")) {
+                return response()->json([
+                    "message" => "Compte bloqué ! Impossible de faire des opérations avec ce compte"
+                ]);
+            }
           $compte->update(['solde'=>$compte->solde-$request->montantTrans]);
-          return "$request->typeTrans  effectué avec succés !";
+          return response()->json([
+            "message"=> "$request->typeTrans  effectué avec succés !",
+          ]);
         }
         else {
+            if ($this->compteFermeOuBloque($request->compte_id,"blocage")) {
+                return response()->json([
+                    "message" => "Compte bloqué ! Impossible de faire des opérations avec ce compte"
+                ]);
+            }
             $fourn= explode("_",$compte->numCompte)[0];
     
             return $this->transfert(
@@ -85,36 +104,118 @@ class TransactionController extends Controller
              $destCompte->update(['solde'=>$soldeDest+($mtntTrans-$mtntTrans*(1/100))]);
              $expCompte->update(['solde'=>$soldeExp-($mtntTrans-$mtntTrans*(1/100))]);
             
-                return "transfert effectué avec succés !";
+             return response()->json([
+                "message"=> "Transfert effectué avec succés !",
+              ]);
             }
             else{
-                return "vous ne pouvez pas pas transféré vers ce compte";
+                return response()->json([
+                    "message"=> "vous ne pouvez pas pas transféré vers ce compte !",
+                  ]);
             }
          }
          else{
              $faker = Faker::create();
-             return $faker->numerify('#######################');
+             return response()->json([
+                "code"=>$faker->numerify('#######################')
+            ]);
+             
          }
+    }
+
+
+    public function compteFermeOuBloque($compteId,$colonne){
+        
+        $table = Compte::where('id',$compteId);
+        $etat=$table->pluck($colonne);
+        if ($etat[0]==0) {
+           return false;
+        }
+        return true;
+    }
+
+    public function BloquerOuDebloquerCompte($compteId,$blocage){
+        $compte=Compte::where("id",$compteId)->first();
+        if ($compte) {
+            if ($this->compteFermeOuBloque($compteId,"blocage") && $blocage==1) {
+                return response()->json([
+                    "message"=>"ce compte est déja bloqué"
+                ]);
+            }
+            $table = Compte::where('id',$compteId);
+    
+                $table->update([
+                    "blocage"=>$blocage
+            ]);
+            if ($blocage==1) {
+                return response()->json([
+                    "message"=>"Compte bloqué !"
+                ]);
+            }
+            return response()->json([
+                "message"=>"Compte débloqué !"
+            ]);
+        }
+        return response()->json([
+            "message"=>"Ce client n'a pas de compte"
+        ]);
+
+    }
+    public function fermerCompte($compteId){
+        if ($this->compteFermeOuBloque($compteId,"etat")) {
+            return response()->json([
+                "message"=>"ce compte est déjà fermé"
+            ]);
+         }
+        $table = Compte::where('id',$compteId);
+
+            $table->update([
+                "etat"=>1
+        ]);
+        return response()->json([
+            "message"=>"Compte Fermé !"
+        ]);
+    }
+    public function annulerTrans($idTrans,Request $request)
+    {
+        $validate=$request->validate([
+            "id"=>"required",
+        ]);
+        $trans=Transaction::where("id",$idTrans)->first();
+        
+        if ($trans->typeTrans!=="transfert") {
+            return response()->json([
+                "message"=>"Impossible d'annuler cette transaction"
+            ]);
+        }
+        if ($trans->created_at->addHours(24) < now()) {
+            return response()->json([
+                "message"=>"La transaction a duré plus de 24 heures "
+            ]);
+        }
+         $idDest= $trans->client_dest_id;
+         $idExp=$trans->client_id;
+         $montantTrans= $trans->montantTrans;
+        $compteDest= Compte::where("client_id", $idDest)->first();
+        $compteExp= Compte::where("client_id", $idExp)->first();
+        if ($compteDest->solde<$montantTrans) {
+            return response()->json([
+                "message"=>"Impossible d'annuler la transaction , l'argent a déjà été retiré"
+            ]);
+        }
+        $compteDest->update(["solde"=>$compteDest->solde=$compteDest->solde-$montantTrans]);
+        $compteExp->update(["solde"=>$compteExp->solde=$compteExp->solde+$montantTrans]);
+
+        return response()->json([
+            "message"=>"Transaction annulé avec success",
+        ]);
+        
     }
     /**
      * Display the specified resource.
      */
-    public function show(Transaction $transaction)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Transaction $transaction)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
+    
+        //char
     public function update(Request $request, Transaction $transaction)
     {
         //

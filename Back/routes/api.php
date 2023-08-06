@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\ClientController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CompteController;
 use App\Http\Controllers\TransactionController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -15,8 +17,15 @@ use App\Http\Controllers\TransactionController;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
-Route::apiResource('/compte', CompteController::class);
+Route::get("/client/{keySearch}",[ClientController::class,"getClientByTelOrNumCompte"]);
+Route::put("/compte/{compteId}",[TransactionController::class,"fermerCompte"]);
+Route::put("/compte/{compteId}/{blocage}",[TransactionController::class,"BloquerOuDebloquerCompte"]);
 Route::post('/transaction', [TransactionController::class, 'storeTrans']);
+Route::post('/transaction/{idTrans}', [TransactionController::class, 'annulerTrans']);
+
+
+Route::apiResource('/compte', CompteController::class);
+Route::apiResource('/client', ClientController::class);
 
 
 

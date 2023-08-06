@@ -10,7 +10,7 @@ let nomExp = document.querySelector('#nomExp');
 let nomDest = document.querySelector('#nomDest');
 let colorExp = document.querySelector('.colorExp');
 let fourn = document.querySelector("#fourn");
-let trans = document.querySelector("#trans");
+let trans = document.querySelector("#transaction");
 let montant = document.querySelector("#montant");
 let montantEnv = document.querySelector("#montantEnv");
 let soldeError = document.querySelector('#soldeError');
@@ -29,6 +29,23 @@ let code = document.querySelector("#code");
 let withCode = document.querySelector("#withCode");
 let mtnFrais = document.querySelector("#mtnFrais");
 let invalideFourn = document.querySelector("#invalideFourn");
+let ajoutClient = document.querySelector("#insertClient");
+let nomClient = document.querySelector("#nomClient");
+let prenomClient = document.querySelector("#prenomClient");
+let telClient = document.querySelector("#telClient");
+let insertCompte = document.querySelector("#insertCompte");
+let numNvClient = document.querySelector("#numNvClient");
+let nomNvClient = document.querySelector("#nomNvClient");
+let fournNvClient = document.querySelector("#fournNvClient");
+let numClClient = document.querySelector("#numClClient");
+let nomClClient = document.querySelector("#nomClClient");
+let closeCompte = document.querySelector("#closeCompte");
+let numblClient = document.querySelector("#numblClient");
+let nomblClient = document.querySelector("#nomblClient");
+let bloquer = document.querySelector("#bloquer");
+let debloquer = document.querySelector("#debloquer");
+let annTrans = document.querySelector("#annTrans");
+let numTrans = document.querySelector("#numTrans");
 // form Data------------------------
 let client = document.querySelector("#client");
 let compt = document.querySelector("#compte");
@@ -68,20 +85,9 @@ function validerTrans() {
             fournisseur: fourn.value,
             type_cb_trans: 0
         };
-        fetch('http://127.0.0.1:8000/api/transaction', {
-            method: 'POST',
-            body: JSON.stringify(object),
-            headers: {
-                'Content-Type': 'application/json',
-                'accept': 'application/json'
-            },
-        })
-            .then((res) => {
-            return res.text();
-        }).then((data) => {
-            console.log(data);
-        });
+        fetchDatas(object, "POST", 'http://127.0.0.1:8000/api/transaction');
         myform.reset();
+        // location.reload(); 
     });
 }
 // ------------------------Expediteurs------------------------
@@ -110,7 +116,7 @@ fetchData(url).then(data => {
         });
         // ---------historiques transactions--------
     });
-    //   --------------------evenement expediteur------------------------
+    //   -----------------evenement expediteur----------
     numExp.addEventListener('input', (e) => {
         let trouveNum = tabNums.some(element => element == +numExp.value);
         let trouveNumCompte = tabNumComptes.some(element => element == numExp.value);
@@ -133,7 +139,7 @@ fetchData(url).then(data => {
         }
     });
 });
-// -------------function pour color l'expéditeur
+// -------------function pour color l'expéditeur-------------------
 function colorExpediteur(span, fourn) {
     if (fourn == "WV") {
         span.style.backgroundColor = ColorExp.WV;
@@ -149,19 +155,21 @@ function colorExpediteur(span, fourn) {
     }
     // span.style.backgroundColor=ColorExp[fourn]
 }
+// -----------------------function charger select --------------------
+function chargerSelect(select, tableau) {
+    tableau.forEach((element) => {
+        let option = document.createElement("option");
+        option.innerHTML = element;
+        select.appendChild(option);
+    });
+}
 // --------------------Transaction------------------------
 // Charger le select des fournisseurs
-Fournisseurs.forEach(fournisseur => {
-    let option = document.createElement('option');
-    option.innerHTML = fournisseur;
-    fourn.appendChild(option);
-});
+chargerSelect(fourn, Fournisseurs);
 // ----------------charger le select des transactions
-Transactions.forEach(transaction => {
-    let option = document.createElement('option');
-    option.innerHTML = transaction;
-    trans.appendChild(option);
-});
+chargerSelect(trans, Transactions);
+// ----------------charger le select des fournisseurs pour nvClients------------------------
+chargerSelect(fournNvClient, Object.keys(Fournisseur));
 // ----verifier frais operateur--------
 function fraisOperateur() {
     if (fourn.value === "Orange Money" || fourn.value === "Wave") {
@@ -174,14 +182,16 @@ function fraisOperateur() {
 //------------------ Vérifier le montant saisie pour la transaction
 function MontantValide(solde) {
     montant.addEventListener("input", () => {
-        verifieMontant(montant, 500, solde);
-        fraisOperateur();
-        if (verifieMontant(montant, 500, solde)) {
-            soldeError.classList.remove("d-none");
-            sold.innerHTML = `<b>solde : ${solde.toString()}</b>`;
-        }
-        else {
-            soldeError.classList.add("d-none");
+        if (trans.value !== "depot") {
+            verifieMontant(montant, 500, solde);
+            fraisOperateur();
+            if (verifieMontant(montant, 500, solde)) {
+                soldeError.classList.remove("d-none");
+                sold.innerHTML = `<b>solde : ${solde.toString()}</b>`;
+            }
+            else {
+                soldeError.classList.add("d-none");
+            }
         }
     });
 }
@@ -199,7 +209,8 @@ function verifieMontant(input, montant, solde = 1000000) {
     }
 }
 // ---------------------Notification transaction --------------------
-function notif(color) {
+function notif(color, notif, message) {
+    notif.innerHTML = message;
     success.classList.remove("d-none");
     success.classList.add(color);
     setTimeout(() => {
@@ -229,7 +240,7 @@ function historiqueTrans(transactions) {
         });
     });
 }
-// -----function transaction avec ou sas code -----
+// -----function transaction avec ou sans code -----
 function transCode() {
     withCode.addEventListener("change", () => {
         if (withCode.checked) {
@@ -265,6 +276,8 @@ trans.addEventListener('change', () => {
     }
     else {
         divmtnEnv.classList.add('d-none');
+        code.classList.add('d-none');
+        frais.classList.add('d-none');
     }
 });
 fourn.addEventListener("change", () => {
@@ -280,3 +293,115 @@ fourn.addEventListener("change", () => {
         }
     }
 });
+// -----------------Ajout Client ------------------------
+ajoutClient.addEventListener("click", () => {
+    if (!(isTel(telClient.value))) {
+        alert("Numero de telephone invalide");
+        return;
+    }
+    const object = {
+        nom: nomClient.value,
+        prenom: prenomClient.value,
+        tel: +telClient.value
+    };
+    fetchDatas(object, "POST", 'http://127.0.0.1:8000/api/client');
+});
+// -----------------Ajout Compte ------------------------
+findClientByNum(numNvClient, nomNvClient);
+insertCompte.addEventListener("click", () => {
+    const object = {
+        solde: 0,
+        client_id: nomNvClient.getAttribute("idCli"),
+        numCompte: fournNvClient.value + "_" + numNvClient.value
+    };
+    fetchDatas(object, "POST", 'http://127.0.0.1:8000/api/compte');
+});
+// -----------------Fermer Compte ------------------------
+findClientByNum(numClClient, nomClClient);
+closeCompte.addEventListener("click", () => {
+    console.log(nomClClient);
+    const object = {
+        id: nomClClient.getAttribute("idCli"),
+    };
+    fetchDatas(object, "PUT", 'http://127.0.0.1:8000/api/compte/' + nomClClient.getAttribute("idCli"));
+});
+// -----------------Blocage Compte ------------------------
+function blocageCompte(button, numClient, nomClient, etat) {
+    findClientByNum(numClient, nomClient);
+    button.addEventListener("click", () => {
+        const object = {
+            id: nomClient.getAttribute("idCli"),
+        };
+        fetchDatas(object, "PUT", 'http://127.0.0.1:8000/api/compte/' + nomClient.getAttribute("idCli") + '/' + etat);
+    });
+}
+blocageCompte(bloquer, numblClient, nomblClient, 1);
+blocageCompte(debloquer, numblClient, nomblClient, 0);
+// -----------------Annuler Transaction ------------------------
+annTrans.addEventListener("click", () => {
+    const object = {
+        id: numTrans.value
+    };
+    fetchDatas(object, "post", 'http://127.0.0.1:8000/api/transaction/' + numTrans.value);
+});
+// --------------------function fetch POST data --------------------
+function fetchDatas(object, method, url) {
+    fetch(url, {
+        method: method,
+        body: JSON.stringify(object),
+        headers: {
+            'Content-Type': 'application/json',
+            'accept': 'application/json'
+        },
+    })
+        .then((res) => {
+        return res.json();
+    })
+        .then((data) => {
+        console.log(data);
+        notif("alert-success", notification, data.message);
+    });
+}
+// ----------------function trouver client par son numero--------------------
+function findClientByNum(inputNum, inputNom) {
+    inputNum.addEventListener("change", () => {
+        if (!(isNumCompte(inputNum.value) || isTel(inputNum.value))) {
+            alert("Numero de compte ou telephone invalide");
+            return;
+        }
+        inputNom.value = "";
+        fetch("http://127.0.0.1:8000/api/client/" + inputNum.value)
+            .then(response => response.json())
+            .then(dataResponse => {
+            console.log(dataResponse);
+            if (dataResponse.data) {
+                inputNom.value = dataResponse.data.prenom + " " + dataResponse.data.nom;
+                inputNom.setAttribute("idCli", dataResponse.data.id);
+            }
+            else {
+                console.log(dataResponse);
+                alert(dataResponse.message);
+            }
+        });
+    });
+}
+// ------------------------validate numero------------------------
+function isTel(telephone) {
+    // let supEspace=telephone.split(' ').join("");
+    let tel = telephone.replace(' ', "");
+    if (tel.length != 9) {
+        return false;
+    }
+    if (isNaN(+tel)) {
+        return false;
+    }
+    return true;
+}
+function isNumCompte(numCompte) {
+    let supEspace = numCompte.trim();
+    let explod = numCompte.split('_');
+    if (explod.length != 2 || !isTel(explod[1]) || !(Object.keys(Fournisseur).includes(explod[0]))) {
+        return false;
+    }
+    return true;
+}

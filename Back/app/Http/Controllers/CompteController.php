@@ -25,14 +25,20 @@ class CompteController extends Controller
         // $validate = $request->validate([
         //     'solde' => 'bail|required|integer',
         // ]);
-       return Compte::firstOrCreate([
+       $compte= Compte::firstOrCreate([
             "solde" => $request->solde,
             "numCompte" => $request->numCompte,
             "client_id" => $request->client_id,
+            "etat" => 0,
+            "blocage" => 0
+        ]);
+        return response()->json([
+            "message" =>"compte créé avec succés",
+            "data" =>$compte
         ]);
 
     }
-
+    
     /**
      * Display the specified resource.
      */

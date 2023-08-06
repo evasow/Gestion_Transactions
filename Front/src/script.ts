@@ -11,7 +11,7 @@ let nomExp=document.querySelector('#nomExp') as HTMLInputElement
 let nomDest=document.querySelector('#nomDest') as HTMLInputElement
 let colorExp=document.querySelector('.colorExp') as HTMLSpanElement
 let fourn=document.querySelector("#fourn") as HTMLSelectElement
-let trans=document.querySelector("#trans") as HTMLSelectElement
+let trans=document.querySelector("#transaction") as HTMLSelectElement
 let montant=document.querySelector("#montant") as HTMLInputElement
 let montantEnv=document.querySelector("#montantEnv") as HTMLInputElement
 let soldeError=document.querySelector('#soldeError') as HTMLDivElement
@@ -30,7 +30,23 @@ let code=document.querySelector("#code") as HTMLDivElement
 let withCode=document.querySelector("#withCode") as HTMLInputElement
 let mtnFrais=document.querySelector("#mtnFrais") as HTMLSpanElement
 let invalideFourn=document.querySelector("#invalideFourn") as HTMLDivElement
-
+let ajoutClient=document.querySelector("#insertClient") as HTMLButtonElement
+let nomClient=document.querySelector("#nomClient") as HTMLInputElement
+let prenomClient=document.querySelector("#prenomClient") as HTMLInputElement
+let telClient=document.querySelector("#telClient") as HTMLInputElement
+let insertCompte=document.querySelector("#insertCompte") as HTMLButtonElement
+let numNvClient=document.querySelector("#numNvClient") as HTMLInputElement
+let nomNvClient=document.querySelector("#nomNvClient") as HTMLInputElement
+let fournNvClient=document.querySelector("#fournNvClient") as HTMLSelectElement
+let numClClient=document.querySelector("#numClClient") as HTMLInputElement
+let nomClClient=document.querySelector("#nomClClient") as HTMLInputElement
+let closeCompte=document.querySelector("#closeCompte") as HTMLButtonElement
+let numblClient=document.querySelector("#numblClient") as HTMLInputElement
+let nomblClient=document.querySelector("#nomblClient") as HTMLInputElement
+let bloquer=document.querySelector("#bloquer") as HTMLButtonElement
+let debloquer=document.querySelector("#debloquer") as HTMLButtonElement
+let annTrans=document.querySelector("#annTrans") as HTMLButtonElement
+let numTrans=document.querySelector("#numTrans") as HTMLInputElement
 // form Data------------------------
 let client=document.querySelector("#client") as HTMLInputElement
 let compt=document.querySelector("#compte") as HTMLInputElement
@@ -87,7 +103,6 @@ function validerTrans() {
     
     valider.addEventListener("click",()=>{
         console.log(trans.value,+montant.value,nomExp.getAttribute("idClient"),nomExp.getAttribute("idCompte"),+numDest.value);
-        
         const object = {
             typeTrans: trans.value,
             montantTrans: +montant.value,
@@ -98,20 +113,9 @@ function validerTrans() {
             fournisseur:fourn.value,
             type_cb_trans:0
         };
-        fetch('http://127.0.0.1:8000/api/transaction', {
-        method: 'POST', 
-        body: JSON.stringify(object),
-        headers: {
-            'Content-Type': 'application/json',
-            'accept': 'application/json'
-        },
-        })
-        .then((res) => {
-         return res.text()
-        }).then((data) => {
-            console.log(data);        
-        })
+        fetchDatas(object,"POST",'http://127.0.0.1:8000/api/transaction')
         myform.reset();
+        // location.reload(); 
     });
 }
 // ------------------------Expediteurs------------------------
@@ -143,7 +147,7 @@ fetchData(url).then(data => {
         // ---------historiques transactions--------
         
     });
-//   --------------------evenement expediteur------------------------
+//   -----------------evenement expediteur----------
     
     numExp.addEventListener('input',(e)=>{
       
@@ -171,7 +175,7 @@ fetchData(url).then(data => {
     });
 });
 
-// -------------function pour color l'expéditeur
+// -------------function pour color l'expéditeur-------------------
 function colorExpediteur(span:HTMLSpanElement, fourn:string) {
     if (fourn=="WV") {
         span.style.backgroundColor=ColorExp.WV
@@ -187,22 +191,23 @@ function colorExpediteur(span:HTMLSpanElement, fourn:string) {
     }
     // span.style.backgroundColor=ColorExp[fourn]
 }
-
+// -----------------------function charger select --------------------
+function chargerSelect(select: HTMLSelectElement, tableau:any)
+{
+    tableau.forEach((element:string) => {
+        let option=document.createElement("option");
+        option.innerHTML=element;
+        select.appendChild(option); 
+    });
+}
 // --------------------Transaction------------------------
 // Charger le select des fournisseurs
-Fournisseurs.forEach(fournisseur => {
-    let option=document.createElement('option');
-    option.innerHTML=fournisseur
-    fourn.appendChild(option);
-    
-});
+chargerSelect(fourn,Fournisseurs)
 // ----------------charger le select des transactions
-Transactions.forEach(transaction => {
-    let option=document.createElement('option');
-    option.innerHTML=transaction
-    trans.appendChild(option);
+chargerSelect(trans,Transactions)
+// ----------------charger le select des fournisseurs pour nvClients------------------------
+chargerSelect(fournNvClient,Object.keys(Fournisseur))
 
-});
 // ----verifier frais operateur--------
 function fraisOperateur() {
     if (fourn.value ==="Orange Money" || fourn.value ==="Wave") {
@@ -218,16 +223,18 @@ function fraisOperateur() {
 function MontantValide(solde:number) {
     
     montant.addEventListener("input",()=>{
+        if (trans.value !=="depot") {
+            
+            verifieMontant(montant, 500,solde)
+            fraisOperateur()
         
-        verifieMontant(montant, 500,solde)
-        fraisOperateur()
-    
-        if (verifieMontant(montant, 500,solde)) {
-            soldeError.classList.remove("d-none");
-            sold.innerHTML=`<b>solde : ${solde.toString()}</b>`;
-        }
-        else{
-            soldeError.classList.add("d-none");
+            if (verifieMontant(montant, 500,solde)) {
+                soldeError.classList.remove("d-none");
+                sold.innerHTML=`<b>solde : ${solde.toString()}</b>`;
+            }
+            else{
+                soldeError.classList.add("d-none");
+            }
         }
       
     })
@@ -247,7 +254,8 @@ function verifieMontant(input:HTMLInputElement,montant:number, solde:number=1000
     }
 }
 // ---------------------Notification transaction --------------------
-function notif(color:string) {
+function notif(color:string,notif:HTMLSpanElement,message:string) {
+    notif.innerHTML = message
     success.classList.remove("d-none");
     success.classList.add(color)
     setTimeout(() => {
@@ -283,7 +291,7 @@ function historiqueTrans(transactions:Transaction[]) {
         
     });
 }
-// -----function transaction avec ou sas code -----
+// -----function transaction avec ou sans code -----
 function transCode() {
    withCode.addEventListener("change", ()=>{
     if (withCode.checked) {
@@ -321,6 +329,8 @@ trans.addEventListener('change',()=>{
     } 
     else{
         divmtnEnv.classList.add('d-none');
+        code.classList.add('d-none');
+        frais.classList.add('d-none');
     }  
 })
 
@@ -340,3 +350,144 @@ fourn.addEventListener("change",()=>{
    
 });
 
+// -----------------Ajout Client ------------------------
+ajoutClient.addEventListener("click",()=>{
+    if(!(isTel(telClient.value))){
+        alert("Numero de telephone invalide");
+        return;
+    }
+    const object={
+        nom:nomClient.value,
+        prenom:prenomClient.value,
+        tel:+telClient.value
+    }
+
+    fetchDatas(object,"POST",'http://127.0.0.1:8000/api/client');
+    
+})
+
+// -----------------Ajout Compte ------------------------
+
+findClientByNum(numNvClient,nomNvClient);
+insertCompte.addEventListener("click",()=>{
+
+    const object={
+       solde:0,
+       client_id:nomNvClient.getAttribute("idCli"),
+       numCompte: fournNvClient.value+"_"+numNvClient.value
+    }
+
+    fetchDatas(object,"POST",'http://127.0.0.1:8000/api/compte');
+})
+
+// -----------------Fermer Compte ------------------------
+findClientByNum(numClClient,nomClClient);
+
+closeCompte.addEventListener("click",()=>{
+console.log(nomClClient);
+
+    const object={
+       id:nomClClient.getAttribute("idCli"),
+    }
+
+    fetchDatas(object,"PUT",'http://127.0.0.1:8000/api/compte/'+nomClClient.getAttribute("idCli"));
+})
+
+// -----------------Blocage Compte ------------------------
+function blocageCompte(button:HTMLButtonElement, numClient:HTMLInputElement, nomClient:HTMLInputElement,etat:number) {
+    findClientByNum(numClient,nomClient);
+
+    button.addEventListener("click",()=>{
+        const object={
+        id:nomClient.getAttribute("idCli"),
+        }
+
+        fetchDatas(object,"PUT",'http://127.0.0.1:8000/api/compte/'+nomClient.getAttribute("idCli")+'/'+etat);
+    })
+}
+blocageCompte(bloquer,numblClient,nomblClient,1)
+blocageCompte(debloquer,numblClient,nomblClient,0)
+
+// -----------------Annuler Transaction ------------------------
+annTrans.addEventListener("click",()=>{
+    const object={
+        id:numTrans.value
+    }
+
+    fetchDatas(object,"post",'http://127.0.0.1:8000/api/transaction/'+numTrans.value);
+    
+})
+// --------------------function fetch POST data --------------------
+
+function fetchDatas(object:object, method:string,url:string) {
+   
+    fetch(url, {
+    method: method, 
+    body: JSON.stringify(object),
+    headers: {
+        'Content-Type': 'application/json',
+        'accept': 'application/json'
+    },
+    })
+    .then((res) => {
+     return res.json()
+    })
+    .then((data) => {
+        console.log(data);   
+        notif("alert-success",notification,data.message);     
+    });
+}
+// ----------------function trouver client par son numero--------------------
+
+function findClientByNum(inputNum:HTMLInputElement,inputNom:HTMLInputElement) {
+    inputNum.addEventListener("change", ()=>{
+
+        if( !(isNumCompte(inputNum.value) || isTel(inputNum.value))){
+           alert("Numero de compte ou telephone invalide");
+           return;
+        }
+        inputNom.value = "";
+           fetch("http://127.0.0.1:8000/api/client/"+inputNum.value)
+           .then(response => response.json())
+           .then(dataResponse => {
+            console.log(dataResponse);
+            
+               if(dataResponse.data)
+               {
+                inputNom.value = dataResponse.data.prenom+" "+dataResponse.data.nom
+                inputNom.setAttribute("idCli",dataResponse.data.id)
+               }
+               else 
+               {
+                   console.log(dataResponse);  
+                   alert(dataResponse.message);    
+               }
+           })
+       })
+}
+
+
+// ------------------------validate numero------------------------
+function isTel(telephone:string):boolean{
+    // let supEspace=telephone.split(' ').join("");
+    let tel=telephone.replace(' ',"");
+if(tel.length!=9 ){
+    return false
+}if(isNaN(+tel)){
+    return false;
+    
+}
+return true;
+}
+
+function isNumCompte(numCompte:string){
+    let supEspace= numCompte.trim(); 
+    let explod=numCompte.split('_');
+    
+    if(explod.length!=2 || !isTel(explod[1]) || !(Object.keys(Fournisseur).includes(explod[0] as Fournisseur))){
+        return false;
+    }
+    return true;
+    
+
+}
