@@ -19,7 +19,8 @@ class TransactionResource extends JsonResource
             "montantTrans" => $this->montantTrans,
             "fournisseur"=> $this->fournisseur,
             "destClient"=> $this->destClient,
-            "client_dest"=> $this->client_dest
+            "client_dest"=> $this->client_dest,
+            "date"=> $this->created_at,
         ];
     }
 }

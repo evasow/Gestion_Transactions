@@ -70,10 +70,10 @@ type Transaction={
     montantTrans:number,
     client_id:number,
     compte_id:number,
-    numDestinataire:number,
-    created_at:Date,
-    client_dest:Client,
 
+    numDestinataire:number,
+    date:Date,
+    client_dest:Client,
 }
 interface Compte{
     "id":number;
@@ -105,10 +105,11 @@ function validerTrans() {
             'Content-Type': 'application/json',
             'accept': 'application/json'
         },
-        }).then((res) => {
+        })
+        .then((res) => {
          return res.text()
         }).then((data) => {
-             console.log(data);        
+            console.log(data);        
         })
         myform.reset();
     });
@@ -137,7 +138,6 @@ fetchData(url).then(data => {
                 console.log(element.client.prenom +" "+ element.client.nom); 
                 nomDest.value= element.client.prenom +" "+ element.client.nom;
                 nomDest.setAttribute("destId", element.client.id.toString());
-                
             }
         })
         // ---------historiques transactions--------
@@ -171,7 +171,7 @@ fetchData(url).then(data => {
     });
 });
 
-// function pour color l'expéditeur
+// -------------function pour color l'expéditeur
 function colorExpediteur(span:HTMLSpanElement, fourn:string) {
     if (fourn=="WV") {
         span.style.backgroundColor=ColorExp.WV
@@ -269,13 +269,11 @@ function historiqueTrans(transactions:Transaction[]) {
             console.log(transaction);
             
             // li.innerHTML=transaction.typeTrans+" "+transaction.montantTrans+" "+transaction.numDestinataire;
-            const date = new Date(transaction.created_at);
-            if (transaction.typeTrans=="transfert") {
-                
-            }
+            const date = new Date(transaction.date);
+        
             li.innerHTML=`<div class="d-flex justify-content-around>
-            <div><h6 class="text-info"><b>${transaction.typeTrans}</b></h6></div>
-            <div>${transaction.client_dest.prenom+" "+transaction.client_dest.nom} </div>
+            <h6 class="text-info"><b>${transaction.typeTrans}</b></h6>
+            
             </div>
             
             <span>${date.toLocaleDateString()}</span>

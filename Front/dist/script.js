@@ -75,7 +75,8 @@ function validerTrans() {
                 'Content-Type': 'application/json',
                 'accept': 'application/json'
             },
-        }).then((res) => {
+        })
+            .then((res) => {
             return res.text();
         }).then((data) => {
             console.log(data);
@@ -132,7 +133,7 @@ fetchData(url).then(data => {
         }
     });
 });
-// function pour color l'expéditeur
+// -------------function pour color l'expéditeur
 function colorExpediteur(span, fourn) {
     if (fourn == "WV") {
         span.style.backgroundColor = ColorExp.WV;
@@ -216,12 +217,10 @@ function historiqueTrans(transactions) {
             li.classList.add("list-group-item");
             console.log(transaction);
             // li.innerHTML=transaction.typeTrans+" "+transaction.montantTrans+" "+transaction.numDestinataire;
-            const date = new Date(transaction.created_at);
-            if (transaction.typeTrans == "transfert") {
-            }
+            const date = new Date(transaction.date);
             li.innerHTML = `<div class="d-flex justify-content-around>
-            <div><h6 class="text-info"><b>${transaction.typeTrans}</b></h6></div>
-            <div>${transaction.client_dest.prenom + " " + transaction.client_dest.nom} </div>
+            <h6 class="text-info"><b>${transaction.typeTrans}</b></h6>
+            
             </div>
             
             <span>${date.toLocaleDateString()}</span>

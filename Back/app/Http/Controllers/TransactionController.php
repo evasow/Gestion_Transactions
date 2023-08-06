@@ -84,7 +84,7 @@ class TransactionController extends Controller
              $mtntTrans=$montant;
              $destCompte->update(['solde'=>$soldeDest+($mtntTrans-$mtntTrans*(1/100))]);
              $expCompte->update(['solde'=>$soldeExp-($mtntTrans-$mtntTrans*(1/100))]);
-                // return $expCompte;
+            
                 return "transfert effectué avec succés !";
             }
             else{
